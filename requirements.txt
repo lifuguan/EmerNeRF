@@ -1,6 +1,6 @@
---extra-index-url https://download.pytorch.org/whl/cu117
-torch==2.0.0+cu117
-torchvision==0.15.0+cu117
+# --extra-index-url https://download.pytorch.org/whl/cu117
+# torch==2.0.0+cu117
+# torchvision==0.15.0+cu117
 omegaconf==2.3.0
 torchmetrics==0.10.3
 xformers==0.0.18
@@ -30,3 +30,5 @@ waymo-open-dataset-tf-2-11-0==1.6.0
 
 # Nuscenes dependencies
 nuscenes-devkit
+
+# pip install torchvision==0.15.1 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu117

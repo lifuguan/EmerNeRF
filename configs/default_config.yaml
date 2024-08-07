@@ -7,13 +7,14 @@ data:
   ray_batch_size: 8192 # ray batch size for training, it's embedded in the dataset class for now
   preload_device: cuda # choose from ["cpu", "cuda"], cache the data on this device. Will oom if the dataset is too large
   pixel_source: # everything related to "pixels" --- from camera images
-    load_size: [640, 960] # [height, width], resize the raw image to this size
+    test_folder: offset_left_0m
+    load_size: [1280, 1920] # [height, width], resize the raw image to this size
     downscale: 1 # downscale factor wrt to the load_size. for example, you may want to render a low-resolution video for preview
-    num_cams: 3 # number of cameras to use, choose from [1, 3, 5] for waymo, [1, 3, 6] for nuscenes. 1: frontal, 3: frontal + frontal_left + frontal_right
-    test_image_stride: 0 # use every Nth timestep for the test set. if 0, use all images for training and none for testing
+    num_cams: 1 # number of cameras to use, choose from [1, 3, 5] for waymo, [1, 3, 6] for nuscenes. 1: frontal, 3: frontal + frontal_left + frontal_right
+    test_image_stride: 5 # use every Nth timestep for the test set. if 0, use all images for training and none for testing
     load_rgb: True  # whether to load rgb images
-    load_sky_mask: True  # whether to load sky masks. We provide pre-extracted sky masks for waymo and nuscenes on google drive
-    load_dynamic_mask: True  # whether to load binary masks for dynamic objects. only available for waymo for now
+    load_sky_mask: False  # whether to load sky masks. We provide pre-extracted sky masks for waymo and nuscenes on google drive
+    load_dynamic_mask: False  # whether to load binary masks for dynamic objects. only available for waymo for now
     load_features: False  # whether to load 2D features from some pretrained model
     skip_feature_extraction: False # whether to skip loading pre-trained for feature extraction
     target_feature_dim: 64 # if not null, we will use pca to reduce the dimension of 2D features to this value
@@ -25,6 +26,8 @@ data:
       buffer_downscale: 16 # downscale factor for the buffer wrt load_size
       buffer_ratio: 0.25 # how many samples to use from the buffer, 0.25 = 25% of the sampled rays will be from the buffer
   lidar_source: # everything related to "lidar" --- from lidar points
+    test_folder: offset_left_0m
+    test_image_stride: 5
     load_lidar: True # whether to load lidar
     only_use_top_lidar: False # whether to only use the top lidar, only available for waymo for now
     truncated_max_range: 80 # max range for truncated lidar in a ego-centric coordinate system

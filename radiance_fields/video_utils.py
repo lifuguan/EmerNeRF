@@ -22,6 +22,7 @@ from utils.visualization_tools import (
     to8b,
     visualize_depth,
 )
+from lpipsPyTorch import lpips
 
 logger = logging.getLogger()
 
@@ -93,6 +94,7 @@ def render_pixels(
         logger.info(f"Eval over {num_samples} images:")
         logger.info(f"\tPSNR: {render_results['psnr']:.4f}")
         logger.info(f"\tSSIM: {render_results['ssim']:.4f}")
+        logger.info(f"\tLPIPS: {render_results['lpips']:.4f}")
         logger.info(f"\tFeature PSNR: {render_results['feat_psnr']:.4f}")
         logger.info(f"\tMasked PSNR: {render_results['masked_psnr']:.4f}")
         logger.info(f"\tMasked SSIM: {render_results['masked_ssim']:.4f}")
@@ -145,6 +147,7 @@ def render(
     forward_flows, backward_flows = [], []
 
     if compute_metrics:
+        lpips_value = []
         psnrs, ssim_scores, feat_psnrs = [], [], []
         masked_psnrs, masked_ssims = [], []
         masked_feat_psnrs = []
@@ -212,6 +215,7 @@ def render(
                         channel_axis=-1,
                     )
                 )
+                lpips_value.append(lpips(rgb.permute(2,0,1), data_dict["pixels"].permute(2,0,1)).item())
                 if "dynamic_masks" in data_dict:
                     dynamic_mask = get_numpy(data_dict["dynamic_masks"]).astype(bool)
                     if dynamic_mask.sum() > 0:
@@ -420,6 +424,7 @@ def render(
     results_dict = {}
     results_dict["psnr"] = non_zero_mean(psnrs) if compute_metrics else -1
     results_dict["ssim"] = non_zero_mean(ssim_scores) if compute_metrics else -1
+    results_dict["lpips"] = non_zero_mean(lpips_value) if compute_metrics else -1
     results_dict["feat_psnr"] = non_zero_mean(feat_psnrs) if compute_metrics else -1
     results_dict["masked_psnr"] = non_zero_mean(masked_psnrs) if compute_metrics else -1
     results_dict["masked_ssim"] = non_zero_mean(masked_ssims) if compute_metrics else -1

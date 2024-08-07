@@ -24,6 +24,39 @@ from radiance_fields.video_utils import render_pixels, save_videos
 from third_party.nerfacc_prop_net import PropNetEstimator, get_proposal_requires_grad_fn
 from utils.logging import MetricLogger, setup_logging
 from utils.visualization_tools import visualize_voxels, visualize_scene_flow
+from torchvision.utils import save_image
+from lpipsPyTorch import lpips
+# from utils.visualization_tools import visualize_depth
+import cv2
+from matplotlib import cm
+import matplotlib as mpl
+from PIL import Image
+
+
+def vis_depth(depth, minmax=None, cmap=cv2.COLORMAP_JET, constant_max=120):
+    """
+    depth: (H, W)
+    """
+    depthmap = np.nan_to_num(depth) # change nan to 0
+
+    # x_ = (255 - x)[:,:,None].repeat(3,axis=-1)
+
+    # x = x[]
+    # threshold
+    # constant_max = np.percentile(depthmap, 90)
+    depthmap_valid_count = (depthmap < 300).sum()
+    constant_max = np.percentile(depthmap[depthmap<300], 99) if depthmap_valid_count > 10 else 60
+    # constant_max = 1
+    # constant_min = 0
+    constant_min = np.percentile(depthmap, 1) if np.percentile(depthmap, 1) < constant_max else 0
+    normalizer = mpl.colors.Normalize(vmin=constant_min, vmax=constant_max)
+    mapper = cm.ScalarMappable(norm=normalizer, cmap='magma_r')
+    depth_vis_color = (mapper.to_rgba(depthmap)[:, :, :3] * 255).astype(np.uint8)
+    # all_white = np.ones_like(x_) * 255
+    # x_ = x_ * (1-bg_mask)[:,:,None] + all_white * bg_mask[:,:,None]
+    # x_ = x_.astype(np.uint8)
+    # x_ = cv2.cvtColor(x_, cv2.COLOR_BGR2RGB)
+    return depth_vis_color#, [np.percentile(depthmap, 0), np.percentile(depthmap, 99)]
 
 logger = logging.getLogger()
 current_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
@@ -287,7 +320,8 @@ def do_evaluation(
             wandb.log(avg_flow_metrics)
         torch.cuda.empty_cache()
 
-    if cfg.data.pixel_source.load_rgb and cfg.render.render_low_res:
+    # if cfg.data.pixel_source.load_rgb and cfg.render.render_low_res:
+    if False:
         logger.info("Rendering full set but in a low_resolution...")
         dataset.pixel_source.update_downscale_factor(1 / cfg.render.low_res_downscale)
         render_results = render_pixels(
@@ -307,6 +341,19 @@ def do_evaluation(
                 cfg.log_dir,
                 "lowres_videos",
                 f"{step}_{args.render_video_postfix}.mp4",
+            )
+        # save gt images and render images
+        image_folder = os.path.join(cfg.log_dir, "lowres_images")
+        if not os.path.exists(image_folder):
+            os.makedirs(image_folder)
+        for i in range(len(render_results["rgbs"])):
+            save_image(
+                torch.tensor(render_results["rgbs"][i]).permute(2, 0, 1),
+                os.path.join(image_folder, f"only_rgb_{i:03d}.png"),
+            )
+            save_image(
+                torch.tensor(render_results["gt_rgbs"][i]).permute(2, 0, 1),
+                os.path.join(image_folder, f"gt_rgb_{i:03d}.png"),
             )
         vis_frame_dict = save_videos(
             render_results,
@@ -343,6 +390,7 @@ def do_evaluation(
                 if k in [
                     "psnr",
                     "ssim",
+                    "lpips",
                     "feat_psnr",
                     "masked_psnr",
                     "masked_ssim",
@@ -362,6 +410,34 @@ def do_evaluation(
                 video_output_pth = (
                     f"{cfg.log_dir}/test_videos/{step}_{args.render_video_postfix}.mp4"
                 )
+            # save full resolution gt images and render images
+            image_folder_full = os.path.join(cfg.log_dir, "full_images")
+            if not os.path.exists(image_folder_full):
+                os.makedirs(image_folder_full)
+            for i in range(len(render_results["rgbs"])):
+                save_image(
+                    torch.tensor(render_results["rgbs"][i]).permute(2, 0, 1),
+                    os.path.join(image_folder_full, f"only_rgb_{i:03d}.png"),
+                )
+                depth = vis_depth(render_results["depths"][i])
+                a = Image.fromarray(depth)
+                a.save(os.path.join(image_folder_full, f"only_depth_{i:03d}.png"))
+                # save_image(
+                #     torch.tensor(render_results["depths"][i]).permute(2, 0, 1),
+                #     os.path.join(image_folder_full, f"only_depth_{i:03d}.png"),
+                # )
+                save_image(
+                    torch.tensor(render_results["gt_rgbs"][i]).permute(2, 0, 1),
+                    os.path.join(image_folder_full, f"gt_rgb_{i:03d}.png"),
+                )
+                save_image(
+                    torch.tensor(render_results["dynamic_rgbs"][i]).permute(2, 0, 1),
+                    os.path.join(image_folder_full, f"dynamic_rgbs_{i:03d}.png"),
+                )
+                save_image(
+                    torch.tensor(render_results["static_rgbs"][i]).permute(2, 0, 1),
+                    os.path.join(image_folder_full, f"static_rgbs_{i:03d}.png"),
+                )
             vis_frame_dict = save_videos(
                 render_results,
                 video_output_pth,
@@ -378,7 +454,8 @@ def do_evaluation(
                     wandb.log({"pixel_rendering/test/" + k: wandb.Image(v)})
             del render_results, vis_frame_dict
             torch.cuda.empty_cache()
-        if cfg.render.render_full:
+        # if cfg.render.render_full:
+        if False:
             logger.info("Evaluating Full Set...")
             render_results = render_pixels(
                 cfg=cfg,
@@ -442,6 +519,9 @@ def main(args):
         from datasets.waymo import WaymoDataset
 
         dataset = WaymoDataset(data_cfg=cfg.data)
+    elif cfg.data.dataset == "ours":
+        from datasets.ours import OursDataset
+        dataset = OursDataset(data_cfg=cfg.data)
     else:
         from datasets.nuscenes import NuScenesDataset
 
@@ -962,6 +1042,7 @@ def main(args):
                         {
                             "pixel_metrics/psnr": render_results["psnr"],
                             "pixel_metrics/ssim": render_results["ssim"],
+                            "pixel_metrics/lpips": render_results["lpips"],
                             "pixel_metrics/feat_psnr": render_results["feat_psnr"],
                             "pixel_metrics/masked_psnr": render_results["masked_psnr"],
                             "pixel_metrics/masked_ssim": render_results["masked_ssim"],

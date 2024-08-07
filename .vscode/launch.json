@@ -1,0 +1,143 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "train 1 cam",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train_emernerf.py",
+            "console": "integratedTerminal",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "7"
+            },
+            "args": [
+                "--config_file",
+                "configs/default_dynamic.yaml",
+                "--output_root",
+                "out",
+                "--project",
+                "emernerf_carla",
+                "--run_name",
+                "debug_lidar",
+                "data.data_root=all_data",
+                "data.scene_idx=carla_pic_0603_Town01", //使用该数据集
+                "data.dataset=ours",
+                "data.pixel_source.test_folder=offset_left_0m",
+                "data.lidar_source.test_folder=offset_left_0m",
+                "data.pixel_source.test_image_stride=5", //划分训练集测试集
+                // "data.scene_idx=0147030",
+                "data.start_timestep=0",
+                "data.end_timestep=148",
+                "data.pixel_source.num_cams=1",
+                // "logging.saveckpt_freq=50000",
+                // "optim.num_iters=50000",
+                // "logging.vis_freq=200"
+            ]
+        },
+        {
+            "name": "eval 1 cam",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train_emernerf.py",
+            "console": "integratedTerminal",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "3"
+            },
+            "args": [
+                "--config_file",
+                "configs/default_dynamic.yaml",
+                "--output_root",
+                "out",
+                "--project",
+                "emernerf_carla",
+                "--run_name",
+                "debug_lidar_Town01_cam3_offset4m",
+                "--eval_only",
+                "resume_from=out/emernerf_carla/debug_lidar_Town01_cam3_new/checkpoint_25000.pth",
+                "data.data_root=all_data",
+                "data.scene_idx=carla_pic_0603_Town01", //使用该数据集
+                "data.dataset=ours",
+                "data.pixel_source.test_folder=offset_left_4m",
+                "data.lidar_source.test_folder=offset_left_4m",
+                "data.pixel_source.test_image_stride=5", //划分训练集测试集
+                // "data.scene_idx=0147030",
+                "data.start_timestep=0",
+                "data.end_timestep=148",
+                "data.pixel_source.num_cams=3",
+                // "logging.saveckpt_freq=50000",
+                // "optim.num_iters=50000",
+                // "logging.vis_freq=200"
+            ]
+        },
+        {
+            "name": "train 3 cam",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train_emernerf.py",
+            "console": "integratedTerminal",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "7"
+            },
+            "args": [
+                "--config_file",
+                "configs/default_dynamic.yaml",
+                "--output_root",
+                "out",
+                "--project",
+                "emernerf_carla",
+                "--run_name",
+                "debug_lidar",
+                "data.data_root=data",
+                "data.scene_idx=carla_pic_0602", //使用该数据集
+                "data.dataset=ours",
+                "data.pixel_source.test_image_stride=5", //划分训练集测试集
+                // "data.scene_idx=0147030",
+                "data.start_timestep=0",
+                "data.end_timestep=148",
+                "data.pixel_source.num_cams=3",
+                // "logging.saveckpt_freq=50000",
+                // "optim.num_iters=50000",
+                // "logging.vis_freq=200"
+            ]
+        },
+        {
+            "name": "video",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/video.py",
+            "console": "integratedTerminal",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "7"
+            },
+            "args": []
+        }
+    ]
+}
+// CUDA_VISIBLE_DEVICES=1 python train_emernerf.py --config_file configs/default_dynamic.yaml \
+// --output_root out --project emernerf_carla --run_name debug_lidar_test_pic_1m \
+// data.data_root=data \
+// data.scene_idx=carla_pic_0602 \
+// data.pixel_source.test_folder=offset_left_1m \
+// data.lidar_source.test_folder=offset_left_1m \
+// data.dataset=ours \
+// data.pixel_source.test_image_stride=5 \
+// data.start_timestep=0 \
+// data.end_timestep=148 \
+// data.pixel_source.num_cams=1 
+// eval
+// CUDA_VISIBLE_DEVICES=1 python train_emernerf.py --config_file configs/default_dynamic.yaml \
+// --output_root out --project emernerf_carla --run_name debug_lidar_test_pic_1m \
+// --eval_only \
+// data.resume_from=out/emernerf_carla/debug_lidar_test_pic_offset_0/checkpoint_25000.pth \
+// data.data_root=data \
+// data.scene_idx=carla_pic_0602 \
+// data.pixel_source.test_folder=offset_left_1m \
+// data.lidar_source.test_folder=offset_left_1m \
+// data.dataset=ours \
+// data.pixel_source.test_image_stride=5 \
+// data.start_timestep=0 \
+// data.end_timestep=148 \
+// data.pixel_source.num_cams=1 
